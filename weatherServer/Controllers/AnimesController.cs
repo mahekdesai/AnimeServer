@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using CountryModel;
 using animeServer.DTO;
 using System.Diagnostics.Metrics;
+using Microsoft.AspNetCore.Authorization;
 
 namespace animeServer.Controllers
 {
@@ -22,6 +23,7 @@ namespace animeServer.Controllers
             return await context.Animes.ToListAsync();
         }
 
+        [Authorize]
         [HttpGet("GetCount")]
         public async Task<ActionResult<IEnumerable<AnimeCount>>> GetCharacterCount()
         {

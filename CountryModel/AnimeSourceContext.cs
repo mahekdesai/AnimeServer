@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 namespace CountryModel;
 
-public partial class AnimeSourceContext : DbContext
+public partial class AnimeSourceContext : IdentityDbContext<AnimeVoiceactorCharacterUser>
 {
     public AnimeSourceContext()
     {
@@ -37,6 +38,7 @@ public partial class AnimeSourceContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
         modelBuilder.Entity<Anime>(entity =>
         {
             entity.HasKey(e => e.AnimeId).HasName("PK__tmp_ms_x__AF82112AB7EE1730");

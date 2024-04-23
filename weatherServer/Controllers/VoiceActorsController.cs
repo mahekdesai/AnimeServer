@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CountryModel;
 using animeServer.DTO;
+using Microsoft.AspNetCore.Authorization;
 
 namespace animeServer.Controllers
 {
@@ -21,6 +22,7 @@ namespace animeServer.Controllers
             return await context.VoiceActors.ToListAsync();
         }
 
+        [Authorize]
         [HttpGet("GetCount")]
         public async Task<ActionResult<IEnumerable<VoiceActorCount>>> GetCharacterCount()
         {
