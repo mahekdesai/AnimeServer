@@ -11,27 +11,22 @@ namespace animeServer.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CharactersController : ControllerBase
+    public class CharactersController(AnimeSourceContext context) : ControllerBase
     {
-        private readonly AnimeSourceContext _context;
-
-        public CharactersController(AnimeSourceContext context)
-        {
-            _context = context;
-        }
+ 
 
         // GET: api/Characters
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Character>>> GetCharacters()
         {
-            return await _context.Characters.ToListAsync();
+            return await context.Characters.ToListAsync();
         }
 
         // GET: api/Characters/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Character>> GetCharacter(int id)
         {
-            var character = await _context.Characters.FindAsync(id);
+            var character = await context.Characters.FindAsync(id);
 
             if (character == null)
             {
@@ -39,6 +34,31 @@ namespace animeServer.Controllers
             }
 
             return character;
+        }
+
+        [HttpGet("AnimesVoiceactors/{characterId}")]
+        public async Task<ActionResult<List<object>>> GetAnimesVoiceactors(int characterId)
+        {
+            var results = await context.AnimeVoiceactorCharacters
+                .Where(avc => avc.CharacterId == characterId)
+                .Select(avc => new {
+                    CharacterId = avc.CharacterId,
+                    VoiceActor = new
+                    {
+                        VoiceActorId = avc.VoiceActor.VoiceAactorId,
+                        VoiceActorName = avc.VoiceActor.VoiceActorName,
+                        VoiceActorImage = avc.VoiceActor.VoiceActorImage // Ensure this data is encoded if binary
+                    },
+                    Anime = new
+                    {
+                        AnimeId = avc.Anime.AnimeId,
+                        AnimeName = avc.Anime.AnimeName,
+                        AnimeImage = avc.Anime.AnimeImage // Ensure this data is encoded if binary
+                    }
+                })
+                .ToListAsync();
+
+            return Ok(results);
         }
 
         // PUT: api/Characters/5
@@ -51,11 +71,11 @@ namespace animeServer.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(character).State = EntityState.Modified;
+            context.Entry(character).State = EntityState.Modified;
 
             try
             {
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -77,8 +97,8 @@ namespace animeServer.Controllers
         [HttpPost]
         public async Task<ActionResult<Character>> PostCharacter(Character character)
         {
-            _context.Characters.Add(character);
-            await _context.SaveChangesAsync();
+            context.Characters.Add(character);
+            await context.SaveChangesAsync();
 
             return CreatedAtAction("GetCharacter", new { id = character.CharacterId }, character);
         }
@@ -87,21 +107,21 @@ namespace animeServer.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCharacter(int id)
         {
-            var character = await _context.Characters.FindAsync(id);
+            var character = await context.Characters.FindAsync(id);
             if (character == null)
             {
                 return NotFound();
             }
 
-            _context.Characters.Remove(character);
-            await _context.SaveChangesAsync();
+            context.Characters.Remove(character);
+            await context.SaveChangesAsync();
 
             return NoContent();
         }
 
         private bool CharacterExists(int id)
         {
-            return _context.Characters.Any(e => e.CharacterId == id);
+            return context.Characters.Any(e => e.CharacterId == id);
         }
     }
 }
