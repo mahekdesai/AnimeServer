@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CountryModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace animeServer.Controllers
 {
@@ -36,6 +37,7 @@ namespace animeServer.Controllers
             return character;
         }
 
+        [Authorize]
         [HttpGet("AnimesVoiceactors/{characterId}")]
         public async Task<ActionResult<List<object>>> GetAnimesVoiceactors(int characterId)
         {

@@ -105,6 +105,7 @@ namespace animeServer.Controllers
             return context.VoiceActors.Any(e => e.VoiceAactorId == id);
         }
 
+        [Authorize]
         [HttpGet("AnimesCharacters/{voiceActorId}")]
         public async Task<ActionResult<List<object>>> GetAnimesCharacters(int voiceActorId)
         {

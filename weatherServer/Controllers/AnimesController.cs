@@ -56,6 +56,7 @@ namespace animeServer.Controllers
             return country;
         }
 
+        [Authorize]
         [HttpGet("VoiceactorsCharacters/{animeId}")]
         public async Task<ActionResult<List<object>>> GetVoiceactorsCharacters(int animeId)
         {
