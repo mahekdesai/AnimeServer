@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Okta.AspNetCore;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,32 +17,32 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c => {
-    c.SwaggerDoc("v1", new()
+c.SwaggerDoc("v1", new()
+{
+    Contact = new()
     {
-        Contact = new()
-        {
-            Email = "mahekdesai@csun.edu",
-            Name = "Mahek Desai",
-            Url = new("https://canvas.csun.edu/courses/128137")
-        },
-        Description = "APIs for Animes",
-        Title = "Animes APIs",
-        Version = "V1"
-    });
-    OpenApiSecurityScheme jwtSecurityScheme = new()
+        Email = "mahekdesai@csun.edu",
+        Name = "Mahek Desai",
+        Url = new("https://canvas.csun.edu/courses/128137")
+    },
+    Description = "Anime APIs",
+    Title = "Anime APIs",
+    Version = "V1"
+});
+OpenApiSecurityScheme jwtSecurityScheme = new()
+{
+    Scheme = "bearer",
+    BearerFormat = "JWT",
+    Name = "JWT Authentication",
+    In = ParameterLocation.Header,
+    Type = SecuritySchemeType.Http,
+    Description = "Please enter *only* JWT token",
+    Reference = new OpenApiReference
     {
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        Name = "JWT Authentication",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.Http,
-        Description = "Please enter *only* JWT token",
-        Reference = new OpenApiReference
-        {
-            Id = JwtBearerDefaults.AuthenticationScheme,
-            Type = ReferenceType.SecurityScheme
-        }
-    };
+        Id = JwtBearerDefaults.AuthenticationScheme,
+        Type = ReferenceType.SecurityScheme
+    }
+};
     c.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, jwtSecurityScheme);
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -55,25 +58,17 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}
-).AddJwtBearer(options =>
+})
+.AddJwtBearer(options =>
 {
-    options.TokenValidationParameters = new()
-    {
-        RequireExpirationTime = true,
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-
-        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-        ValidAudience = builder.Configuration["JwtSettings:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
-            builder.Configuration["JwtSettings:SecurityKey"] ?? throw new InvalidOperationException()))
-    };
+    options.Authority = "https://dev-11969775.okta.com/oauth2/default";
+    options.Audience = "api://default";
+    options.RequireHttpsMetadata = false;
 });
 
-builder.Services.AddScoped<JwtHandler>();
+builder.Services.AddAuthorization();
+
+builder.Services.AddControllers();
 
 var app = builder.Build();
 
