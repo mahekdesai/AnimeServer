@@ -64,12 +64,14 @@ namespace animeServer.Controllers
                 .Where(avc => avc.AnimeId == animeId)
                 .Select(avc => new {
                     AnimeId = avc.AnimeId,
-                    Character = new {
+                    Character = new
+                    {
                         CharacterId = avc.Character.CharacterId,
                         CharacterName = avc.Character.CharacterName,
                         CharacterImage = avc.Character.CharacterImage // Ensure this data is encoded if binary
                     },
-                    VoiceActor = new {
+                    VoiceActor = new
+                    {
                         VoiceActorId = avc.VoiceActor.VoiceAactorId,
                         VoiceActorName = avc.VoiceActor.VoiceActorName,
                         VoiceActorImage = avc.VoiceActor.VoiceActorImage // Ensure this data is encoded if binary
