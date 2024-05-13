@@ -9,6 +9,7 @@ using CountryModel;
 using animeServer.DTO;
 using System.Diagnostics.Metrics;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Data.SqlClient;
 
 namespace animeServer.Controllers
 {
@@ -43,6 +44,7 @@ namespace animeServer.Controllers
             });
             return await x.ToListAsync();
         }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<Anime>> GetAnime(int id)
         {
@@ -117,12 +119,28 @@ namespace animeServer.Controllers
         // POST: api/Animes
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Anime>> PostAnime(Anime anime)
+        public async Task<ActionResult<Anime>> PostAnime([FromForm] NewAnimeDto newAnimeDto)
         {
-            context.Animes.Add(anime);
-            await context.SaveChangesAsync();
+            // Check if the model state is valid
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-            return CreatedAtAction("GetCountry", new { id = anime.AnimeId }, anime);
+            // Read the image data from the uploaded file
+            byte[] imageData;
+            using (var stream = newAnimeDto.AnimeImage.OpenReadStream())
+            using (var ms = new MemoryStream())
+            {
+                await stream.CopyToAsync(ms);
+                imageData = ms.ToArray();
+            }
+
+            // Construct the SQL query to insert the image into the database
+            var query = $"INSERT INTO Anime (AnimeName, AnimeImage) VALUES ('{newAnimeDto.AnimeName}', @imageData)";
+            await context.Database.ExecuteSqlRawAsync(query, new SqlParameter("@imageData", imageData));
+
+            return Ok();
         }
 
         // DELETE: api/Animes/5
