@@ -143,6 +143,59 @@ namespace animeServer.Controllers
             return Ok();
         }
 
+        [HttpPost("{id}/AddVoiceactorCharacter")]
+        public async Task<ActionResult> AddVoiceactorCharacter(int id, [FromForm] NewVoiceactorCharacterDto newVoiceactorCharacterDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            byte[] characterImageData;
+            byte[] voiceActorImageData;
+            using (var characterStream = newVoiceactorCharacterDto.CharacterImage.OpenReadStream())
+            using (var characterMs = new MemoryStream())
+            using (var voiceActorStream = newVoiceactorCharacterDto.VoiceActorImage.OpenReadStream())
+            using (var voiceActorMs = new MemoryStream())
+            {
+                await characterStream.CopyToAsync(characterMs);
+                await voiceActorStream.CopyToAsync(voiceActorMs);
+                characterImageData = characterMs.ToArray();
+                voiceActorImageData = voiceActorMs.ToArray();
+            }
+
+            var character = new Character
+            {
+                CharacterName = newVoiceactorCharacterDto.CharacterName,
+                CharacterImage = characterImageData
+            };
+            context.Characters.Add(character);
+            await context.SaveChangesAsync();
+
+            var characterId = character.CharacterId;
+
+            var voiceActor = new VoiceActor
+            {
+                VoiceActorName = newVoiceactorCharacterDto.VoiceActorName,
+                VoiceActorImage = voiceActorImageData
+            };
+            context.VoiceActors.Add(voiceActor);
+            await context.SaveChangesAsync();
+
+            var voiceActorId = voiceActor.VoiceAactorId;
+
+            var animeVoiceactorCharacter = new AnimeVoiceactorCharacter
+            {
+                AnimeId = id,
+                VoiceActorId = voiceActorId,
+                CharacterId = characterId
+            };
+            context.AnimeVoiceactorCharacters.Add(animeVoiceactorCharacter);
+            await context.SaveChangesAsync();
+
+            return Ok();
+        }
+
         // DELETE: api/Animes/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAnime(int id)

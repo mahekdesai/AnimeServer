@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CountryModel;
 using Microsoft.AspNetCore.Authorization;
+using animeServer.DTO;
+using Microsoft.Data.SqlClient;
 
 namespace animeServer.Controllers
 {
@@ -97,12 +99,81 @@ namespace animeServer.Controllers
         // POST: api/Characters
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Character>> PostCharacter(Character character)
+        public async Task<ActionResult<Character>> PostCharacter([FromForm] NewCharacterDto newCharacterDto)
         {
-            context.Characters.Add(character);
+            // Check if the model state is valid
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Read the image data from the uploaded file
+            byte[] imageData;
+            using (var stream = newCharacterDto.CharacterImage.OpenReadStream())
+            using (var ms = new MemoryStream())
+            {
+                await stream.CopyToAsync(ms);
+                imageData = ms.ToArray();
+            }
+
+            // Construct the SQL query to insert the image into the database
+            var query = $"INSERT INTO Character (CharacterName, CharacterImage) VALUES ('{newCharacterDto.CharacterName}', @imageData)";
+            await context.Database.ExecuteSqlRawAsync(query, new SqlParameter("@imageData", imageData));
+
+            return Ok();
+        }
+
+        [HttpPost("{id}/AddAnimeVoiceactor")]
+        public async Task<ActionResult> AddAnimeVoiceactor(int id, [FromForm] NewAnimeVoiceactorDto newAnimeVoiceactorDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            byte[] animeImageData;
+            byte[] voiceActorImageData;
+            using (var animeStream = newAnimeVoiceactorDto.AnimeImage.OpenReadStream())
+            using (var animeMs = new MemoryStream())
+            using (var voiceActorStream = newAnimeVoiceactorDto.VoiceActorImage.OpenReadStream())
+            using (var voiceActorMs = new MemoryStream())
+            {
+                await animeStream.CopyToAsync(animeMs);
+                await voiceActorStream.CopyToAsync(voiceActorMs);
+                animeImageData = animeMs.ToArray();
+                voiceActorImageData = voiceActorMs.ToArray();
+            }
+
+            var anime = new Anime
+            {
+                AnimeName = newAnimeVoiceactorDto.AnimeName,
+                AnimeImage = animeImageData
+            };
+            context.Animes.Add(anime);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetCharacter", new { id = character.CharacterId }, character);
+            var animeId = anime.AnimeId;
+
+            var voiceActor = new VoiceActor
+            {
+                VoiceActorName = newAnimeVoiceactorDto.VoiceActorName,
+                VoiceActorImage = voiceActorImageData
+            };
+            context.VoiceActors.Add(voiceActor);
+            await context.SaveChangesAsync();
+
+            var voiceActorId = voiceActor.VoiceAactorId;
+
+            var animeVoiceactorCharacter = new AnimeVoiceactorCharacter
+            {
+                AnimeId = animeId,
+                VoiceActorId = voiceActorId,
+                CharacterId = id,
+            };
+            context.AnimeVoiceactorCharacters.Add(animeVoiceactorCharacter);
+            await context.SaveChangesAsync();
+
+            return Ok();
         }
 
         // DELETE: api/Characters/5
