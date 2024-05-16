@@ -1,41 +1,57 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using CountryModel;
 using Microsoft.AspNetCore.Identity;
+using CountryModel;
+using animeServer.DTO;
 
 namespace animeServer.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class SeedController(AnimeSourceContext db, IHostEnvironment environment, UserManager<AnimeVoiceactorCharacterUser> userManager) : ControllerBase
+    public class SeedController : ControllerBase
     {
+        private readonly AnimeSourceContext _db;
+        private readonly UserManager<AnimeVoiceactorCharacterUser> _userManager;
+
+        public SeedController(AnimeSourceContext db, UserManager<AnimeVoiceactorCharacterUser> userManager)
+        {
+            _db = db;
+            _userManager = userManager;
+        }
 
         [HttpPost("User")]
-        public async Task<ActionResult> SeedUser()
+        public async Task<ActionResult> SeedUser([FromBody] Register model)
         {
-            (string name, string email) = ("user1", "comp584@csun.edu");
-            AnimeVoiceactorCharacterUser user = new()
+            if (model == null || string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Password))
             {
-                UserName = name,
-                Email = email,
+                return BadRequest("Invalid user data.");
+            }
+
+            var user = new AnimeVoiceactorCharacterUser
+            {
+                UserName = model.Email,
+                Email = model.Email,
                 SecurityStamp = Guid.NewGuid().ToString()
             };
-            if (await userManager.FindByNameAsync(name) is not null)
+
+            var existingUser = await _userManager.FindByNameAsync(user.UserName);
+            if (existingUser != null)
             {
-                user.UserName = "user2";
+                return Conflict("User already exists.");
             }
-            _ = await userManager.CreateAsync(user, "P@ssw0rd!")
-                ?? throw new InvalidOperationException();
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
             user.EmailConfirmed = true;
             user.LockoutEnabled = false;
-            await db.SaveChangesAsync();
+            await _db.SaveChangesAsync();
 
-            return Ok();
+            return Ok("User created successfully.");
         }
     }
 }

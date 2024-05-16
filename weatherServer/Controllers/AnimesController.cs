@@ -136,7 +136,6 @@ namespace animeServer.Controllers
                 imageData = ms.ToArray();
             }
 
-            // Construct the SQL query to insert the image into the database
             var query = $"INSERT INTO Anime (AnimeName, AnimeImage) VALUES ('{newAnimeDto.AnimeName}', @imageData)";
             await context.Database.ExecuteSqlRawAsync(query, new SqlParameter("@imageData", imageData));
 
